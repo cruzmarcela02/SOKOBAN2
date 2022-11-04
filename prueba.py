@@ -1,8 +1,6 @@
+import csv
 import soko
-import gamelib
-
-ANCHO_VENTANA = 300
-ALTO_VENTANA = 300
+CARACTERES = ['#','$','@','.','*','+'," "]
 
 def cargar_niveles(archivo):
     level = {}
@@ -27,6 +25,10 @@ def cargar_niveles(archivo):
     
     return level, dimension
 
+#n, d = cargar_niveles('prueba.txt')
+#print(n)
+#print(d)
+
 def perfeccionar_grilla(dic_niveles, dimension):
     
     niveles_perfeccionados = {}
@@ -38,7 +40,6 @@ def perfeccionar_grilla(dic_niveles, dimension):
 
             if len(cadena_de_caracteres) < dimension[clave]:
 
-                print(dimension[clave])
                 agregar = dimension[clave] - len(cadena_de_caracteres)
                 fila_new = cadena_de_caracteres + agregar * ' '
                 niveles_perfeccionados[clave].append(fila_new)
@@ -48,32 +49,47 @@ def perfeccionar_grilla(dic_niveles, dimension):
     
     return niveles_perfeccionados               
 
+#niveles = perfeccionar_grilla(n,d)
+#print(niveles)
+
 def niveles_del_juego(archivo):
     level, dimension = cargar_niveles(archivo)
     level = perfeccionar_grilla(level,dimension)
     return level
-    
-def juego_mostrar(niveles):
 
-    #for nivel in niveles:
-    grilla = soko.crear_grilla(niveles[nivel])
-    print(perfeccionar_grilla)    
+#print(niveles_del_juego('prueba.txt'))
 
-def main():
-    # Inicializar el estado del juego
 
-    gamelib.resize(ANCHO_VENTANA, ALTO_VENTANA)
+def juego_mostrar(archivo):
 
-    while gamelib.is_alive():
-        gamelib.draw_begin()
-        # Dibujar la pantalla
-        gamelib.draw_end()
+    levels = niveles_del_juego(archivo)
+    for nivel in levels:
+        grilla = soko.crear_grilla(levels['Level 1'])
+        print(grilla)
 
-        ev = gamelib.wait(gamelib.EventType.KeyPress)
-        if not ev:
-            break
+juego_mostrar('prueba.txt')
 
-        tecla = ev.key
-        # Actualizar el estado del juego, según la `tecla` presionada
+def cargar(archivo):
+    n_nivel = 0
+    level = {}
+    dimension = 0
+    with open (archivo,'r') as niveles: # Abrimos el archivo como - niveles
+        for linea in niveles: # Recorremos cada linea de -niveles-
+            linea = linea.rstrip('\n') # Le sacamos la \n de cada fin de linea
+            
+            for caracter in linea[:1]:
 
-gamelib.init(main)
+
+
+                if not caracter in CARACTERES:
+                    n_nivel += 1
+                else:    
+                    level[n_nivel] = level.get(n_nivel,[])
+                    level[n_nivel].append(linea)
+                    if len(linea) >= dimension:
+                        dimension = len(linea)
+
+        print(f'la linea mas larga mide {dimension}' )
+
+    print(level, dimension)
+#cargar('prueba.txt')
