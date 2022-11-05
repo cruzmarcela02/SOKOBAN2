@@ -1,9 +1,29 @@
 import csv
 import soko
+import gamelib
+
+ANCHO_VENTANA = 300
+ALTO_VENTANA = 300
 CARACTERES = ['#','$','@','.','*','+'," "]
+ACCIONES = ['NORTE','SUR','ESTE',"OESTE",'REINICIAR','SALIR']
+
+'''
+    Se cargan los niveles tan cual estan en el archivo.
+    Se arreglan los anchos, y devuelve el diccionario de los niveles.
+    Con la estructura:
+        levels:{
+            'Level 1' : ['####  ',
+                         '# .#  ',
+                         '#  ###',
+                         '#*@  #',
+                         '#  $ #',
+                         '#  ###',
+                         '####  ']
+        }
+'''
 
 def cargar_niveles(archivo):
-    level = {}
+    niveles_archivo = {}
     dimension = {}
     with open (archivo, 'r') as archivo:
         lector = csv.reader(archivo)
@@ -15,26 +35,29 @@ def cargar_niveles(archivo):
             for valor in linea:
                 if not valor[:1] in CARACTERES:
                     nivel = valor
-                    level[nivel] = level.get(valor,[])
+                    niveles_archivo[nivel] = niveles_archivo.get(valor,[])
                     dimension[nivel] = dimension.get(valor,0)
                 else:
-                    level[nivel].append(valor)
+                    niveles_archivo[nivel].append(valor)
                     
                     if len(valor) >= dimension[nivel]:
                         dimension[nivel] = len(valor)
     
-    return level, dimension
-
-#n, d = cargar_niveles('prueba.txt')
-#print(n)
-#print(d)
+        levels = perfeccionar_grilla(niveles_archivo,dimension)
+    return levels
+'''
+    Recibe 2 diccionarios:
+        1ro contiene los niveles del archivo
+        2do contiene el ancho maximo de cada nivel
+    Si las cadena de caracteres no tienen el ancho maximo, se rellena con ' ' 
+'''
 
 def perfeccionar_grilla(dic_niveles, dimension):
     
-    niveles_perfeccionados = {}
+    levels = {}
     for clave in dic_niveles:
 
-        niveles_perfeccionados[clave]=[]
+        levels[clave]=[]
             
         for cadena_de_caracteres in dic_niveles[clave]:
 
@@ -42,54 +65,34 @@ def perfeccionar_grilla(dic_niveles, dimension):
 
                 agregar = dimension[clave] - len(cadena_de_caracteres)
                 fila_new = cadena_de_caracteres + agregar * ' '
-                niveles_perfeccionados[clave].append(fila_new)
+                levels[clave].append(fila_new)
 
             else:
-                niveles_perfeccionados[clave].append(cadena_de_caracteres)
+                levels[clave].append(cadena_de_caracteres)
     
-    return niveles_perfeccionados               
+    return levels               
 
-#niveles = perfeccionar_grilla(n,d)
-#print(niveles)
+'''
+    Quiero leer las teclas
+'''
+def leer_teclas(archivo):
+    click = {}
+    with open (archivo, 'r') as teclas:
+        for linea in teclas:
 
-def niveles_del_juego(archivo):
-    level, dimension = cargar_niveles(archivo)
-    level = perfeccionar_grilla(level,dimension)
-    return level
+            linea = linea.rstrip('\n')
+            tecla_accion = linea.split(' = ')
 
-#print(niveles_del_juego('prueba.txt'))
+            if not tecla_accion[0] or not tecla_accion[1]:
+                continue
+            else:
+                tecla = tecla_accion[0]
+                accion = tecla_accion[1]
 
+            click[tecla] = accion 
+            #if not tecla in click:
+            #    click[tecla] = accion
+    
+    return click
+#print(leer_teclas('teclas.txt')) 
 
-def juego_mostrar(archivo):
-
-    levels = niveles_del_juego(archivo)
-    for nivel in levels:
-        grilla = soko.crear_grilla(levels['Level 1'])
-        print(grilla)
-
-juego_mostrar('prueba.txt')
-
-def cargar(archivo):
-    n_nivel = 0
-    level = {}
-    dimension = 0
-    with open (archivo,'r') as niveles: # Abrimos el archivo como - niveles
-        for linea in niveles: # Recorremos cada linea de -niveles-
-            linea = linea.rstrip('\n') # Le sacamos la \n de cada fin de linea
-            
-            for caracter in linea[:1]:
-
-
-
-                if not caracter in CARACTERES:
-                    n_nivel += 1
-                else:    
-                    level[n_nivel] = level.get(n_nivel,[])
-                    level[n_nivel].append(linea)
-                    if len(linea) >= dimension:
-                        dimension = len(linea)
-
-        print(f'la linea mas larga mide {dimension}' )
-
-    print(level, dimension)
-#cargar('prueba.txt')
