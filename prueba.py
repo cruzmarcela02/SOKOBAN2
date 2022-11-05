@@ -73,9 +73,18 @@ def perfeccionar_grilla(dic_niveles, dimension):
     return levels               
 
 '''
-    Quiero leer las teclas
+    Cargamos las teclas en un diccionario. Del tipo:
+    click = {
+            'w': 'NORTE',
+            'a': 'OESTE',
+            's': 'SUR',
+            'd': 'ESTE',
+            'r': 'REINICIAR',
+            'Escape':
+            'SALIR'}
+            }
 '''
-def leer_teclas(archivo):
+def cargar_teclas(archivo):
     click = {}
     with open (archivo, 'r') as teclas:
         for linea in teclas:
@@ -90,9 +99,6 @@ def leer_teclas(archivo):
                 accion = tecla_accion[1]
 
             click[tecla] = accion 
-            #if not tecla in click:
-            #    click[tecla] = accion
-    
     return click
-#print(leer_teclas('teclas.txt')) 
+#print(cargar_teclas('teclas.txt')) 
 

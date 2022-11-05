@@ -71,6 +71,35 @@ def perfeccionar_grilla(dic_niveles, dimension):
     
     return levels
 
+'''
+    Cargamos las teclas en un diccionario. Del tipo:
+    click = {
+            'w': 'NORTE',
+            'a': 'OESTE',
+            's': 'SUR',
+            'd': 'ESTE',
+            'r': 'REINICIAR',
+            'Escape':
+            'SALIR'}
+            }
+'''
+def cargar_teclas(archivo):
+    click = {}
+    with open (archivo, 'r') as teclas:
+        for linea in teclas:
+
+            linea = linea.rstrip('\n')
+            tecla_accion = linea.split(' = ')
+
+            if not tecla_accion[0] or not tecla_accion[1]:
+                continue
+            else:
+                tecla = tecla_accion[0]
+                accion = tecla_accion[1]
+
+            click[tecla] = accion 
+    return click
+
 def main():
     # Inicializar el estado del juego
 
