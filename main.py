@@ -99,7 +99,7 @@ def cargar_teclas(archivo):
 
             click[tecla] = accion 
     return click
-
+    
 def main():
     # Inicializar el estado del juego
 
