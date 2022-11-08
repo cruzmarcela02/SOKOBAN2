@@ -2,8 +2,8 @@ import csv
 import soko
 import gamelib
 
-ANCHO_VENTANA = 384
-ALTO_VENTANA = 448
+#ANCHO_VENTANA = 384
+#ALTO_VENTANA = 448
 
 '''
     Se cargan los niveles tan cual estan en el archivo.
@@ -19,7 +19,6 @@ ALTO_VENTANA = 448
                          '####  ']
         }
 '''
-
 def cargar_niveles(archivo):
     niveles_archivo = {}
     dimension = {}
@@ -31,7 +30,10 @@ def cargar_niveles(archivo):
                 continue
             
             for valor in linea:
-                if not valor[:1] in soko.Caracteres:
+                if valor[:1] == "'":
+                    continue
+
+                if valor[:1] == 'L':
                     nivel = valor
                     niveles_archivo[nivel] = niveles_archivo.get(valor,[])
                     dimension[nivel] = dimension.get(valor,0)
@@ -43,12 +45,14 @@ def cargar_niveles(archivo):
     
         levels = perfeccionar_grilla(niveles_archivo,dimension)
     return levels
+
 '''
     Recibe 2 diccionarios:
         1ro contiene los niveles del archivo
         2do contiene el ancho maximo de cada nivel
     Si las cadena de caracteres no tienen el ancho maximo, se rellena con ' ' 
 '''
+
 
 def perfeccionar_grilla(dic_niveles, dimension):
     
@@ -68,7 +72,9 @@ def perfeccionar_grilla(dic_niveles, dimension):
             else:
                 levels[clave].append(cadena_de_caracteres)
     
-    return levels               
+    return levels
+
+#print(cargar_niveles('prueba.txt'))
 
 '''
     Cargamos las teclas en un diccionario. Del tipo:
@@ -104,8 +110,12 @@ def cargar_teclas(archivo):
                 click[tecla] = soko.ESTE
             if accion == 'SUR':
                 click[tecla] = soko.SUR
+            if accion == 'REINICIAR' or accion == 'SALIR':
+                click[tecla] = accion
 
     return click
+
+print(cargar_teclas('teclas.txt'))
 
 '''
     CALCULAR DIMENSION DE LA VENTANA, SEGUN LA GRILLA QUE SE JUEGE
@@ -134,26 +144,43 @@ def juego_crear(archivo_niveles, archivo_teclas):
     levels = cargar_niveles(archivo_niveles)
     teclas = cargar_teclas(archivo_teclas)
     grilla = soko.crear_grilla(levels['Level 1'])
+    ancho, alto = amoldar_pantalla(grilla)
     juego = {
         'levels': levels,
         'teclas' : teclas,
         'grilla': grilla,
-        'inicio': True
+        'inicio': True,
+        'nivel' : 1,
+        'ANCHO' : ancho,
+        'ALTO' : alto
     }
 
     return juego
 
-
-#def juego_actualizar(juego, movimiento):
+'''
+    El jugador se mueve en el tablero todo se ve bien, ahora veamos como avanzar entre los niveles
+'''
 
 def juego_actualizar(grilla, juego, movimiento):
     
     direccion = detectar_movimiento(movimiento,juego['teclas'])
+    print(direccion)
 
     if juego['inicio']:
         juego['inicio'] = False
     
-    return soko.mover(grilla, direccion)
+    grilla = soko.mover(grilla, direccion)
+
+
+    if soko.juego_ganado(grilla):
+        return cambiar_de_nivel(grilla,juego)
+    
+    if direccion == 'REINICIAR':
+        return reiniciar(grilla,juego)
+    
+    
+
+    return grilla #soko.mover(grilla, direccion)
 
 '''
     Mostramos el primer nivel por pantalla. Despues ver que onda
@@ -205,18 +232,47 @@ def mostrar(grilla):
             f += 64
         c += 64
 
+'''
+    Podemos cambiar del nivel1 al nivel 2
+'''
+def cambiar_de_nivel(grilla,juego):
+    
+    if soko.juego_ganado(grilla):
+        juego['nivel'] = juego.get('nivel',0) + 1
+        nivel = juego['nivel']
+        levels = juego ['levels']
+        grilla = levels[f'Level {nivel}']
+        ancho, alto = amoldar_pantalla(grilla)
+        #print(ancho)
+        #print(alto)
+        juego['ANCHO'] = ancho
+        juego['ALTO'] = alto
+    return grilla
+
+'''
+    Reiniciar el nivel volver a la grilla inicial del nivel
+'''
+def reiniciar(grilla,juego):
+
+    nivel = juego['nivel']
+    levels = juego ['levels']
+    grilla = levels[f'Level {nivel}']
+    ancho, alto = amoldar_pantalla(grilla)
+    juego['ANCHO'] = ancho
+    juego['ALTO'] = alto
+    return grilla
 
 
 def main():
     # Inicializar el estado del juego
-    gamelib.resize(ANCHO_VENTANA, ALTO_VENTANA)
     juego = juego_crear('prueba.txt','teclas.txt')
+    gamelib.resize(juego['ANCHO'], juego['ALTO'])
     grilla = juego['grilla']
-    click = juego['teclas']
     for linea in grilla:
         print(linea)
 
     while gamelib.is_alive():
+        gamelib.resize(juego['ANCHO'], juego['ALTO'])
         gamelib.draw_begin()
 
         '''
@@ -233,6 +289,8 @@ def main():
             break
 
         tecla = ev.key
+        if tecla == 'Escape':
+            break
         grilla = juego_actualizar(grilla,juego,tecla)
 
         # Actualizar el estado del juego, según la `tecla` presionada
