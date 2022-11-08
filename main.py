@@ -143,9 +143,7 @@ def juego_crear(archivo_niveles, archivo_teclas):
     }
 
     return juego
-
-
-#def juego_actualizar(juego, movimiento):
+    
 
 def juego_actualizar(grilla, juego, movimiento):
     
