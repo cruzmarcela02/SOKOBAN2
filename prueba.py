@@ -4,8 +4,6 @@ import gamelib
 
 ANCHO_VENTANA = 384
 ALTO_VENTANA = 448
-CARACTERES = ['#','$','@','.','*','+'," "]
-ACCIONES = ['NORTE','SUR','ESTE',"OESTE",'REINICIAR','SALIR']
 
 '''
     Se cargan los niveles tan cual estan en el archivo.
@@ -33,7 +31,7 @@ def cargar_niveles(archivo):
                 continue
             
             for valor in linea:
-                if not valor[:1] in CARACTERES:
+                if not valor[:1] in soko.Caracteres:
                     nivel = valor
                     niveles_archivo[nivel] = niveles_archivo.get(valor,[])
                     dimension[nivel] = dimension.get(valor,0)
@@ -97,86 +95,69 @@ def cargar_teclas(archivo):
             else:
                 tecla = tecla_accion[0]
                 accion = tecla_accion[1]
+            
+            if accion == 'NORTE':
+                click[tecla] = soko.NORTE
+            if accion == 'OESTE':
+                click[tecla] = soko.OESTE
+            if accion == 'ESTE':
+                click[tecla] = soko.ESTE
+            if accion == 'SUR':
+                click[tecla] = soko.SUR
 
-            click[tecla] = accion 
     return click
 
 '''
-    CALCULAR DIMENSION DE LA VENTANA
-    ANCHO_VENTANA = ??
-    ALTO_VENTANA = ??
+    CALCULAR DIMENSION DE LA VENTANA, SEGUN LA GRILLA QUE SE JUEGE
+    ANCHO_VENTANA = Cantidad de columnas por 64 
+    ALTO_VENTANA = Cantidad de filas por 64
+'''
+def amoldar_pantalla(grilla):
+    ancho_ventana, alto_ventana =  soko.dimensiones(grilla)
+    return ancho_ventana*64, alto_ventana*64
+
+'''
+    Quiero devolver que tipo de movimiento se hace al apretar cierta tecla
+    Si la letra no pertenece a las mias del movimiento. Retorna None
+'''
+def detectar_movimiento(tecla_m, click):
+
+    if tecla_m in click:
+        return click[tecla_m]
+    return
+
+'''
+    Aca todo empieza a fallar
 '''
 def juego_crear(archivo_niveles, archivo_teclas):
 
     levels = cargar_niveles(archivo_niveles)
     teclas = cargar_teclas(archivo_teclas)
-
     grilla = soko.crear_grilla(levels['Level 1'])
+    juego = {
+        'levels': levels,
+        'teclas' : teclas,
+        'grilla': grilla,
+        'inicio': True
+    }
 
-    return grilla
+    return juego
 
-#print(juego_crear('prueba.txt','teclas.txt'))
 
-def mostrar_juego(grilla):
+#def juego_actualizar(juego, movimiento):
 
-    a = 0
-    b = 0
-    c = 0
-    d = 0
-    e = 0
-    f = 0
-    g = 0
-
-    for elemento in grilla[0]:
-        
-        if elemento == '#':
-            gamelib.draw_image('img/ground.gif', a, 0)
-            gamelib.draw_image('img/wall.gif', a, 0)
-        
-        a += 64
-        
+def juego_actualizar(grilla, juego, movimiento):
     
-    for elemento in grilla[0]:
-        if elemento == '$':
-            gamelib.draw_image('img/ground.gif', b, 0)
-            gamelib.draw_image('img/box.gif', b, 0)
-        
-        b += 64
+    direccion = detectar_movimiento(movimiento,juego['teclas'])
 
-    for elemento in grilla[0]:
-        if elemento == '@':
-            gamelib.draw_image('img/ground.gif', c, 0)
-            gamelib.draw_image('img/player.gif', c, 0)
-        
-        c += 64
+    if juego['inicio']:
+        juego['inicio'] = False
     
-    for elemento in grilla[0]:
-        if elemento == '.':
-            gamelib.draw_image('img/ground.gif', d, 0)
-            gamelib.draw_image('img/goal.gif', d, 0)
-        d += 64
+    return soko.mover(grilla, direccion)
 
-    for elemento in grilla[0]:
-        if elemento == '*':
-            gamelib.draw_image('img/ground.gif', e, 0)
-            gamelib.draw_image('img/goal.gif', e, 0)
-            gamelib.draw_image('img/box.gif', e, 0)
-        
-        e += 64
-
-    for elemento in grilla[0]:
-        if elemento == '+':
-            gamelib.draw_image('img/ground.gif', f, 0)
-            gamelib.draw_image('img/goal.gif', f, 0)
-            gamelib.draw_image('img/player.git',f,0)
-        
-        f += 64
-    
-    for elemento in grilla[0]:
-        if elemento == soko.VACIO:
-            gamelib.draw_image('img/ground.gif', g, 0)
-        g += 64
-
+'''
+    Mostramos el primer nivel por pantalla. Despues ver que onda
+'''
 
 def mostrar(grilla):
 
@@ -214,7 +195,7 @@ def mostrar(grilla):
 
             if elemento == soko.OBJETIVO_JUGADOR:
                 gamelib.draw_image('img/ground.gif', f, c)
-                gamelib.draw_image('img/player.git', f, c)
+                gamelib.draw_image('img/player.gif', f, c)
                 gamelib.draw_image('img/goal.gif', f, c)
         
     
@@ -228,10 +209,12 @@ def mostrar(grilla):
 
 def main():
     # Inicializar el estado del juego
-
     gamelib.resize(ANCHO_VENTANA, ALTO_VENTANA)
-    grilla = juego_crear('prueba.txt','teclas.txt')
-    print(grilla)
+    juego = juego_crear('prueba.txt','teclas.txt')
+    grilla = juego['grilla']
+    click = juego['teclas']
+    for linea in grilla:
+        print(linea)
 
     while gamelib.is_alive():
         gamelib.draw_begin()
@@ -239,20 +222,8 @@ def main():
         '''
             Poner el piso abajo de las otras cosas por las uniones
         '''
-        #mostrar_juego(grilla)
 
         mostrar(grilla)
-        #gamelib.draw_image('img/ground.gif', 0, 0)
-        #gamelib.draw_image('img/wall.gif', 0, 0)
-
-        #gamelib.draw_image('img/ground.gif', 64, 0)
-        #gamelib.draw_image('img/wall.gif', 64, 0)
-
-        #gamelib.draw_image('img/ground.gif', 0, 64)
-        #gamelib.draw_image('img/wall.gif', 0, 64)
-        
-        #gamelib.draw_image('img/ground.gif', 64, 64)
-        #gamelib.draw_image('img/player.gif', 64, 64)
 
         # Dibujar la pantalla
         gamelib.draw_end()
@@ -262,6 +233,8 @@ def main():
             break
 
         tecla = ev.key
+        grilla = juego_actualizar(grilla,juego,tecla)
+
         # Actualizar el estado del juego, según la `tecla` presionada
 
 gamelib.init(main)
