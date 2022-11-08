@@ -129,6 +129,7 @@ def detectar_movimiento(tecla_m, click):
 '''
     Aca todo empieza a fallar
 '''
+
 def juego_crear(archivo_niveles, archivo_teclas):
 
     levels = cargar_niveles(archivo_niveles)
