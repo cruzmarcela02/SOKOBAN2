@@ -2,24 +2,22 @@ import csv
 import soko
 import gamelib
 
-#ANCHO_VENTANA = 384
-#ALTO_VENTANA = 448
 
-'''
-    Se cargan los niveles tan cual estan en el archivo.
-    Se arreglan los anchos, y devuelve el diccionario de los niveles.
-    Con la estructura:
-        levels:{
-            'Level 1' : ['####  ',
-                         '# .#  ',
-                         '#  ###',
-                         '#*@  #',
-                         '#  $ #',
-                         '#  ###',
-                         '####  ']
-        }
-'''
 def cargar_niveles(archivo):
+    '''
+        Se cargan los niveles tan cual estan en el archivo.
+        Se arreglan los anchos, y devuelve el diccionario de los niveles.
+        Con la estructura:
+            levels:{
+                'Level 1' : ['####  ',
+                            '# .#  ',
+                            '#  ###',
+                            '#*@  #',
+                            '#  $ #',
+                            '#  ###',
+                            '####  ']
+            }
+    '''
     niveles_archivo = {}
     dimension = {}
     with open (archivo, 'r') as archivo:
@@ -46,15 +44,13 @@ def cargar_niveles(archivo):
         levels = perfeccionar_grilla(niveles_archivo,dimension)
     return levels
 
-'''
-    Recibe 2 diccionarios:
-        1ro contiene los niveles del archivo
-        2do contiene el ancho maximo de cada nivel
-    Si las cadena de caracteres no tienen el ancho maximo, se rellena con ' ' 
-'''
-
-
 def perfeccionar_grilla(dic_niveles, dimension):
+    '''
+        Recibe 2 diccionarios:
+            1ro contiene los niveles del archivo
+            2do contiene el ancho maximo de cada nivel
+        Si las cadena de caracteres no tienen el ancho maximo, se rellena con ' ' 
+    '''
     
     levels = {}
     for clave in dic_niveles:
@@ -76,19 +72,19 @@ def perfeccionar_grilla(dic_niveles, dimension):
 
 #print(cargar_niveles('prueba.txt'))
 
-'''
-    Cargamos las teclas en un diccionario. Del tipo:
-    click = {
-            'w': 'NORTE',
-            'a': 'OESTE',
-            's': 'SUR',
-            'd': 'ESTE',
-            'r': 'REINICIAR',
-            'Escape':
-            'SALIR'}
-            }
-'''
 def cargar_teclas(archivo):
+    '''
+        Cargamos las teclas en un diccionario. Del tipo:
+        click = {
+                'w': 'NORTE',
+                'a': 'OESTE',
+                's': 'SUR',
+                'd': 'ESTE',
+                'r': 'REINICIAR',
+                'Escape':
+                'SALIR'}
+                }
+    '''
     click = {}
     with open (archivo, 'r') as teclas:
         for linea in teclas:
@@ -115,31 +111,31 @@ def cargar_teclas(archivo):
 
     return click
 
-print(cargar_teclas('teclas.txt'))
+#print(cargar_teclas('teclas.txt'))
 
-'''
-    CALCULAR DIMENSION DE LA VENTANA, SEGUN LA GRILLA QUE SE JUEGE
-    ANCHO_VENTANA = Cantidad de columnas por 64 
-    ALTO_VENTANA = Cantidad de filas por 64
-'''
 def amoldar_pantalla(grilla):
+    '''
+        CALCULAR DIMENSION DE LA VENTANA, SEGUN LA GRILLA QUE SE JUEGE
+        ANCHO_VENTANA = Cantidad de columnas por 64 
+        ALTO_VENTANA = Cantidad de filas por 64
+    '''
     ancho_ventana, alto_ventana =  soko.dimensiones(grilla)
     return ancho_ventana*64, alto_ventana*64
 
-'''
-    Quiero devolver que tipo de movimiento se hace al apretar cierta tecla
-    Si la letra no pertenece a las mias del movimiento. Retorna None
-'''
 def detectar_movimiento(tecla_m, click):
+    '''
+        Quiero devolver que tipo de movimiento se hace al apretar cierta tecla
+        Si la letra no pertenece a las mias del movimiento. Retorna None
+    '''
 
     if tecla_m in click:
         return click[tecla_m]
     return
 
-'''
-    Aca todo empieza a fallar
-'''
 def juego_crear(archivo_niveles, archivo_teclas):
+    '''
+        Aca todo empieza a fallar
+    '''
 
     levels = cargar_niveles(archivo_niveles)
     teclas = cargar_teclas(archivo_teclas)
@@ -157,11 +153,10 @@ def juego_crear(archivo_niveles, archivo_teclas):
 
     return juego
 
-'''
-    El jugador se mueve en el tablero todo se ve bien, ahora veamos como avanzar entre los niveles
-'''
-
 def juego_actualizar(grilla, juego, movimiento):
+    '''
+        El jugador se mueve en el tablero todo se ve bien, ahora veamos como avanzar entre los niveles
+    '''
     
     direccion = detectar_movimiento(movimiento,juego['teclas'])
     print(direccion)
@@ -182,11 +177,10 @@ def juego_actualizar(grilla, juego, movimiento):
 
     return grilla #soko.mover(grilla, direccion)
 
-'''
-    Mostramos el primer nivel por pantalla. Despues ver que onda
-'''
-
 def mostrar(grilla):
+    '''
+        Mostramos el primer nivel por pantalla. Despues ver que onda
+    '''
 
     c = 0
     for fila in grilla:
@@ -232,10 +226,10 @@ def mostrar(grilla):
             f += 64
         c += 64
 
-'''
-    Podemos cambiar del nivel1 al nivel 2
-'''
 def cambiar_de_nivel(grilla,juego):
+    '''
+        Podemos cambiar del nivel1 al nivel 2
+    '''
     
     if soko.juego_ganado(grilla):
         juego['nivel'] = juego.get('nivel',0) + 1
@@ -249,10 +243,10 @@ def cambiar_de_nivel(grilla,juego):
         juego['ALTO'] = alto
     return grilla
 
-'''
-    Reiniciar el nivel volver a la grilla inicial del nivel
-'''
 def reiniciar(grilla,juego):
+    '''
+        Reiniciar el nivel volver a la grilla inicial del nivel
+    '''
 
     nivel = juego['nivel']
     levels = juego ['levels']
@@ -261,6 +255,21 @@ def reiniciar(grilla,juego):
     juego['ANCHO'] = ancho
     juego['ALTO'] = alto
     return grilla
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def main():

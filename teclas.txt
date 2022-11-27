@@ -8,6 +8,9 @@ a = OESTE
 s = SUR
 d = ESTE
 
+k = DESHACER
+l = REHACER
+
 r = REINICIAR
 
 Escape = SALIR

@@ -1,6 +1,7 @@
 import csv
 import soko
 import gamelib
+import cola
 import pila
 
 IMAGENES = {
@@ -10,13 +11,18 @@ IMAGENES = {
     '.': 'img/goal.gif',
     ' ': 'img/ground.gif'
 }
+
+M_COMPLEMENTARIOS = {
+    (-1,0):(1,0),
+    (1,0):(-1,0),
+    (0,-1):(0,1),
+    (0,1):(0,-1)
+}
 PX = 64
 COMILLA = "'"
 
-REHACER = 'REHACER'
-DESHACER = 'DESHACER'
-REINICIAR = 'REINICIAR'
-
+def guardar_movimientos():
+    return
 
 def perfeccionar_grilla(niveles, dimension):
     '''
@@ -119,7 +125,7 @@ def cargar_teclas(archivo):
                     click[tecla] = soko.ESTE
                 if accion == 'SUR':
                     click[tecla] = soko.SUR
-                if accion == 'REINICIAR' or accion == 'SALIR' or accion == 'DESHACER' or accion == 'REHACER':
+                if accion == 'REINICIAR' or accion == 'SALIR':
                     click[tecla] = accion
         return click
     except IOError as err:
@@ -144,31 +150,6 @@ def detectar_accion(tecla, click):
         return click[tecla]
     return
 
-def deshacer(grilla_actual, juego):
-    p_deshacer = juego['deshacer']
-    
-    if p_deshacer.esta_vacia():
-        return grilla_actual
-
-    p_rehacer = juego ['rehacer']
-    p_rehacer.apilar(grilla_actual)
-    return p_deshacer.desapilar()
-
-def rehacer(grilla_actual,juego):
-    p_rehacer = juego['rehacer']
-
-    if p_rehacer.esta_vacia():
-        return grilla_actual
-
-    p_deshacer = juego['deshacer']
-    p_deshacer.apilar(grilla_actual)
-    return p_rehacer.desapilar()
-
-def guardar_movimiento(grilla, juego):
-    juego['deshacer'].apilar(grilla)
-    if not juego['rehacer'].esta_vacia():
-        juego['rehacer'] = pila.Pila()
-
 def juego_crear(archivo_niveles, archivo_teclas):
     '''
         Inicializamos el juego:
@@ -179,12 +160,9 @@ def juego_crear(archivo_niveles, archivo_teclas):
     '''
     levels = cargar_niveles(archivo_niveles)
     teclas = cargar_teclas(archivo_teclas)
+
     grilla = soko.crear_grilla(levels['Level 1'])
     ancho, alto = amoldar_ventana(grilla)
-
-    p_rehacer = pila.Pila()
-    p_deshacer = pila.Pila()
-
     juego = {
         'levels': levels,
         'teclas' : teclas,
@@ -192,8 +170,6 @@ def juego_crear(archivo_niveles, archivo_teclas):
         'ANCHO' : ancho,
         'ALTO' : alto,
         'lvl_nro' : 1,
-        'rehacer': p_rehacer,
-        'deshacer': p_deshacer
     }
 
     return juego
@@ -206,30 +182,13 @@ def juego_actualizar(grilla, juego, tecla):
     '''
     indicacion = detectar_accion(tecla,juego['teclas'])
     
-    if indicacion == REINICIAR:
-        return reiniciar(grilla,juego)
-    
-    if indicacion == DESHACER:
-        #apilar en ESTADO actual en REAHACER
-        grilla = deshacer(grilla,juego)
-        return grilla
-    
-    if indicacion == REHACER:
-        grilla = rehacer(grilla,juego)
-        return grilla
-
-    #Reiniciamos el Rehacer
-    
-
-    #apilas el estado anterior en DESHACER
-    guardar_movimiento(grilla,juego)
-
     grilla = soko.mover(grilla, indicacion)
 
-    
     if soko.juego_ganado(grilla):
         return cambiar_de_nivel(grilla,juego)
     
+    if indicacion == 'REINICIAR':
+        return reiniciar(grilla,juego)
 
     return grilla
 
@@ -240,8 +199,7 @@ def reiniciar(grilla,juego):
     nro = juego['lvl_nro']
     levels = juego ['levels']
     grilla = levels[f'Level {nro}']
-    juego['rehacer'] = pila.Pila()
-    juego['deshacer'] = pila.Pila()
+
     return grilla
 
 def cambiar_de_nivel(grilla,juego):
@@ -257,22 +215,9 @@ def cambiar_de_nivel(grilla,juego):
         nro = juego['lvl_nro']
         levels = juego ['levels']
         grilla = levels[f'Level {nro}']
-        juego['rehacer'] = pila.Pila()
-        juego['deshacer'] = pila.Pila()
         juego['ANCHO'], juego['ALTO'] = amoldar_ventana(grilla)
 
     return grilla
-
-def buscar_solucion(estado_inicial):
-    '''
-    algoritmo buscar_solucion(estado_inicial):
-        visitados := un conjunto vacío de estados
-        devolver backtrack(estado_inicial, visitados)
-    '''
-    visitados = []
-    return backtrack(estado_inicial, visitados)
-
-
 
 def mostrar(grilla):
     '''
@@ -283,18 +228,18 @@ def mostrar(grilla):
     for f in range(filas):
         for c in range(columnas):
             caracter = grilla[f][c]
-            gamelib.draw_image(IMAGENES[soko.VACIO], c*PX, f*PX)
+            gamelib.draw_image(IMAGENES[' '], c*PX, f*PX)
 
             if caracter in IMAGENES:
                 gamelib.draw_image(IMAGENES[caracter], c*PX, f*PX)
                 
             if soko.hay_objetivo(grilla,c,f) and soko.hay_jugador(grilla,c,f):
-                gamelib.draw_image(IMAGENES[soko.JUGADOR], c*PX, f*PX)
-                gamelib.draw_image(IMAGENES[soko.OBJETIVO], c*PX, f*PX)
+                gamelib.draw_image(IMAGENES['@'], c*PX, f*PX)
+                gamelib.draw_image(IMAGENES['.'], c*PX, f*PX)
 
             if soko.hay_objetivo(grilla,c,f) and soko.hay_caja(grilla,c,f):
-                gamelib.draw_image(IMAGENES[soko.CAJA], c*PX, f*PX)
-                gamelib.draw_image(IMAGENES[soko.OBJETIVO], c*PX, f*PX)
+                gamelib.draw_image(IMAGENES['$'], c*PX, f*PX)
+                gamelib.draw_image(IMAGENES['.'], c*PX, f*PX)
 
 def main():
     # Inicializar el estado del juego
