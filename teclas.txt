@@ -10,6 +10,7 @@ d = ESTE
 
 k = DESHACER
 l = REHACER
+h = HELP
 
 r = REINICIAR
 

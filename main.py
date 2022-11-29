@@ -149,24 +149,16 @@ def detectar_accion(tecla, click):
     return
 
 def deshacer(grilla_actual, juego):
-    p_deshacer = juego['deshacer']
-    
-    if p_deshacer.esta_vacia():
+    if juego['deshacer'].esta_vacia():
         return grilla_actual
-
-    p_rehacer = juego ['rehacer']
-    p_rehacer.apilar(grilla_actual)
-    return p_deshacer.desapilar()
+    juego ['rehacer'].apilar(grilla_actual)
+    return juego['deshacer'].desapilar()
 
 def rehacer(grilla_actual,juego):
-    p_rehacer = juego['rehacer']
-
-    if p_rehacer.esta_vacia():
+    if juego['rehacer'].esta_vacia():
         return grilla_actual
-
-    p_deshacer = juego['deshacer']
-    p_deshacer.apilar(grilla_actual)
-    return p_rehacer.desapilar()
+    juego['deshacer'].apilar(grilla_actual)
+    return juego['rehacer'].desapilar()
 
 def guardar_movimiento(grilla, juego):
     juego['deshacer'].apilar(grilla)
@@ -185,10 +177,6 @@ def juego_crear(archivo_niveles, archivo_teclas):
     teclas = cargar_teclas(archivo_teclas)
     grilla = soko.crear_grilla(levels['Level 1'])
     ancho, alto = amoldar_ventana(grilla)
-
-    p_rehacer = pila.Pila()
-    p_deshacer = pila.Pila()
-
     juego = {
         'levels': levels,
         'teclas' : teclas,
@@ -196,8 +184,8 @@ def juego_crear(archivo_niveles, archivo_teclas):
         'ANCHO' : ancho,
         'ALTO' : alto,
         'lvl_nro' : 1,
-        'rehacer': p_rehacer,
-        'deshacer': p_deshacer,
+        'rehacer': pila.Pila(),
+        'deshacer': pila.Pila(),
         'hay_pistas': False,
         'cola_pistas': cola.Cola()
     }
@@ -209,6 +197,45 @@ def cargar_pistas(lista_pistas,juego):
     for pista in lista_pistas:
         juego['cola_pistas'].encolar(pista)
     return juego['cola_pistas']
+
+def actualizar_estado(juego):
+    ''' Reinicio las pilas de movimientos y cola de pistas junto a su estado'''
+    juego['rehacer'] = pila.Pila()
+    juego['deshacer'] = pila.Pila()
+    juego['cola_pistas'] = cola.Cola()
+    juego['hay_pistas'] = False
+
+def reiniciar(grilla,juego):
+    '''
+        Reinicia el nivel, devuelve a la grilla inicial del nivel.
+    '''
+    nro = juego['lvl_nro']
+    levels = juego ['levels']
+    grilla = levels[f'Level {nro}']
+    actualizar_estado(juego)
+    return grilla
+
+def cambiar_de_nivel(grilla,juego):
+    '''
+        Si el nivel esta ganado:
+            - incrementa un nro de nivel
+            - devuelve la grilla del nuevo nivel
+            - modifica y reasigna las medidas de la ventana
+            - si no se gano, devuelve la misma grilla
+    '''
+    if soko.juego_ganado(grilla):
+        juego['lvl_nro'] = juego.get('lvl_nro',0) + 1
+        nro = juego['lvl_nro']
+        levels = juego ['levels']
+        grilla = levels[f'Level {nro}']
+        actualizar_estado(juego)
+        juego['ANCHO'], juego['ALTO'] = amoldar_ventana(grilla)
+
+    return grilla
+
+def vaciar_pistas(juego):
+    juego['cola_pistas'] = cola.Cola()
+    juego['hay_pistas'] = False
 
 def juego_actualizar(grilla, juego, tecla):
     '''
@@ -257,8 +284,7 @@ def juego_actualizar(grilla, juego, tecla):
 
     grilla = soko.mover(grilla, indicacion)
 
-    juego['cola_pistas'] = cola.Cola()
-    juego['hay_pistas'] = False
+    vaciar_pistas(juego)
     
     if soko.juego_ganado(grilla):
         return cambiar_de_nivel(grilla,juego)
@@ -266,39 +292,6 @@ def juego_actualizar(grilla, juego, tecla):
 
     return grilla
 
-def reiniciar(grilla,juego):
-    '''
-        Reinicia el nivel, vuelve a la grilla inicial del nivel
-    '''
-    nro = juego['lvl_nro']
-    levels = juego ['levels']
-    grilla = levels[f'Level {nro}']
-    juego['rehacer'] = pila.Pila()
-    juego['deshacer'] = pila.Pila()
-    juego['cola_pista'] = cola.Cola()
-    juego['hay_pistas'] = False
-    return grilla
-
-def cambiar_de_nivel(grilla,juego):
-    '''
-        Si el nivel esta ganado:
-            - incrementa un nro de nivel
-            - devuelve la grilla del nuevo nivel
-            - modifica y reasigna las medidas de la ventana
-            - si no se gano, devuelve la misma grilla
-    '''
-    if soko.juego_ganado(grilla):
-        juego['lvl_nro'] = juego.get('lvl_nro',0) + 1
-        nro = juego['lvl_nro']
-        levels = juego ['levels']
-        grilla = levels[f'Level {nro}']
-        juego['rehacer'] = pila.Pila()
-        juego['deshacer'] = pila.Pila()
-        juego['cola_pista'] = cola.Cola()
-        juego['hay_pistas'] = False
-        juego['ANCHO'], juego['ALTO'] = amoldar_ventana(grilla)
-
-    return grilla
 
 def buscar_solucion(estado_inicial):
     visitados = set()
@@ -356,7 +349,7 @@ def mostrar(grilla):
             if soko.hay_objetivo(grilla,c,f) and soko.hay_caja(grilla,c,f):
                 gamelib.draw_image(IMAGENES[soko.CAJA], c*PX, f*PX)
                 gamelib.draw_image(IMAGENES[soko.OBJETIVO], c*PX, f*PX)
-
+    
 def main():
     # Inicializar el estado del juego
     gamelib.title('SOKOBAN 2: LA VENGANZA')
@@ -367,10 +360,15 @@ def main():
     while gamelib.is_alive():
 
         gamelib.resize(juego['ANCHO'], juego['ALTO'])
+
         
         gamelib.draw_begin()
 
         mostrar(grilla)
+
+        if juego['hay_pistas']:
+            gamelib.draw_rectangle(5, 5, 150, 35, outline='white', fill='green')
+            gamelib.draw_text('Pistas Disponibles!', 10, 10, fill='white', anchor='nw')
 
         gamelib.draw_end()
 
@@ -379,7 +377,7 @@ def main():
             break
 
         tecla = ev.key
-
+        print(tecla)
         if tecla == 'Escape':
             break
 
