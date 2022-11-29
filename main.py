@@ -2,6 +2,7 @@ import csv
 import soko
 import gamelib
 import pila
+import cola
 
 IMAGENES = {
     '#': 'img/wall.gif',
@@ -16,6 +17,9 @@ COMILLA = "'"
 REHACER = 'REHACER'
 DESHACER = 'DESHACER'
 REINICIAR = 'REINICIAR'
+SALIR = 'SALIR'
+PISTA = 'HELP'
+DIRECCIONES = [soko.ESTE, soko.OESTE, soko.NORTE, soko.SUR]
 
 
 def perfeccionar_grilla(niveles, dimension):
@@ -119,7 +123,7 @@ def cargar_teclas(archivo):
                     click[tecla] = soko.ESTE
                 if accion == 'SUR':
                     click[tecla] = soko.SUR
-                if accion == 'REINICIAR' or accion == 'SALIR' or accion == 'DESHACER' or accion == 'REHACER':
+                if accion == REINICIAR or accion == SALIR or accion == DESHACER or accion == REHACER or accion == PISTA:
                     click[tecla] = accion
         return click
     except IOError as err:
@@ -193,10 +197,18 @@ def juego_crear(archivo_niveles, archivo_teclas):
         'ALTO' : alto,
         'lvl_nro' : 1,
         'rehacer': p_rehacer,
-        'deshacer': p_deshacer
+        'deshacer': p_deshacer,
+        'hay_pistas': False,
+        'cola_pistas': cola.Cola()
     }
 
     return juego
+
+def cargar_pistas(lista_pistas,juego):
+    print(lista_pistas)
+    for pista in lista_pistas:
+        juego['cola_pistas'].encolar(pista)
+    return juego['cola_pistas']
 
 def juego_actualizar(grilla, juego, tecla):
     '''
@@ -205,6 +217,25 @@ def juego_actualizar(grilla, juego, tecla):
         Si gana el nivel avanza al siguiente, si no se actualiza la grilla en forma de clon
     '''
     indicacion = detectar_accion(tecla,juego['teclas'])
+
+    if indicacion == PISTA:
+        if not juego['hay_pistas']:
+            juego['hay_pistas'], pistas = buscar_solucion(grilla)
+            print("termine de buscar")
+            print(juego['hay_pistas'])
+            print(pistas)
+            if juego['hay_pistas']:
+                juego['cola_pistas'] = cargar_pistas(pistas, juego)
+            return grilla
+        
+        else:
+            indicacion = juego['cola_pistas'].desencolar()
+            guardar_movimiento(grilla,juego)
+            grilla = soko.mover(grilla, indicacion)
+            if soko.juego_ganado(grilla):
+                return cambiar_de_nivel(grilla,juego)
+            return grilla
+
     
     if indicacion == REINICIAR:
         return reiniciar(grilla,juego)
@@ -226,6 +257,8 @@ def juego_actualizar(grilla, juego, tecla):
 
     grilla = soko.mover(grilla, indicacion)
 
+    juego['cola_pistas'] = cola.Cola()
+    juego['hay_pistas'] = False
     
     if soko.juego_ganado(grilla):
         return cambiar_de_nivel(grilla,juego)
@@ -242,6 +275,8 @@ def reiniciar(grilla,juego):
     grilla = levels[f'Level {nro}']
     juego['rehacer'] = pila.Pila()
     juego['deshacer'] = pila.Pila()
+    juego['cola_pista'] = cola.Cola()
+    juego['hay_pistas'] = False
     return grilla
 
 def cambiar_de_nivel(grilla,juego):
@@ -259,20 +294,46 @@ def cambiar_de_nivel(grilla,juego):
         grilla = levels[f'Level {nro}']
         juego['rehacer'] = pila.Pila()
         juego['deshacer'] = pila.Pila()
+        juego['cola_pista'] = cola.Cola()
+        juego['hay_pistas'] = False
         juego['ANCHO'], juego['ALTO'] = amoldar_ventana(grilla)
 
     return grilla
 
 def buscar_solucion(estado_inicial):
-    '''
-    algoritmo buscar_solucion(estado_inicial):
-        visitados := un conjunto vacío de estados
-        devolver backtrack(estado_inicial, visitados)
-    '''
-    visitados = []
+    visitados = set()
     return backtrack(estado_inicial, visitados)
 
+def backtrack(estado,visitados):
+    print("buscando...")
+    agregar(visitados, estado)
+    if soko.juego_ganado(estado):
+        # ¡encontramos la solución!
+        return True, []
+    
+    for movimiento in DIRECCIONES:
+        nuevo_estado = soko.mover(estado, movimiento)
+        nuevo_estado_transformado = tranformar_a_cadena(nuevo_estado)
+        if nuevo_estado_transformado in visitados:
+            continue
+        solucion_encontrada, acciones = backtrack(nuevo_estado,visitados)
+        if solucion_encontrada:
+            return True, [movimiento] + acciones
+    return False, None
 
+def agregar(visitados, estado):
+    cadena_estado = tranformar_a_cadena(estado)
+    visitados.add(cadena_estado)
+
+def tranformar_a_cadena(estado):
+    columnas, filas = soko.dimensiones(estado)
+    cadena = ''
+    for f in range(filas):
+        for c in range(columnas):
+            caracter = estado[f][c]
+            cadena += caracter
+        cadena = cadena + '\n'
+    return cadena
 
 def mostrar(grilla):
     '''
